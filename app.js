@@ -1,38 +1,72 @@
-let addFrm = document.addfrm;
-let text = addFrm.add;
-let ul = document.querySelector(".todos");
-let addItem = (item) => {
-    let str = `<li>
-    <span>${item}</span>
-    <i class="far fa-trash-alt delete"></i>
-</li>`;
-    ul.innerHTML += str;
-};
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('todo-form');
+    const input = document.getElementById('todo-input');
+    const todoList = document.getElementById('todo-list');
+    const searchInput = document.getElementById('search-input');
+    const emptyListMessage = document.getElementById('empty-list-message');
 
-addFrm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    let item = text.value;
-    if (item.length > 0) {
-        addItem(item);
-        text.value = "";
-    }
-});
+    let todos = JSON.parse(localStorage.getItem('todos')) || [];
 
-ul.addEventListener("click", (e) => {
-    if (e.target.nodeName === "I") {
-        e.target.parentElement.remove();
+    function saveTodos() {
+        localStorage.setItem('todos', JSON.stringify(todos));
     }
-});
-let searchItem = (text) => {
-    let listItems = ul.children;
-    for (let li of listItems) {
-        if (li.innerText.toLowerCase().indexOf(text) == -1)
-            li.classList.add("filtered");
-        else li.classList.remove("filtered");
-    }
-};
 
-let searchText = document.querySelector(".search input");
-searchText.addEventListener("keyup", (e) => {
-    searchItem(searchText.value.toLowerCase());
+    function renderTodos(todosToRender) {
+        todoList.innerHTML = '';
+        todosToRender.forEach((todo, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${todo}</span>
+                <button class="delete-btn" data-index="${index}">Delete</button>
+            `;
+            todoList.appendChild(li);
+        });
+        updateEmptyListMessage();
+    }
+
+    function updateEmptyListMessage() {
+        if (todos.length === 0) {
+            emptyListMessage.classList.remove('hidden');
+        } else {
+            emptyListMessage.classList.add('hidden');
+        }
+    }
+
+    function addTodo(e) {
+        e.preventDefault();
+        const todoText = input.value.trim();
+        if (todoText !== '') {
+            todos.push(todoText);
+            saveTodos();
+            renderTodos(todos);
+            input.value = '';
+        }
+    }
+
+    function deleteTodo(index) {
+        todos.splice(index, 1);
+        saveTodos();
+        renderTodos(todos);
+    }
+
+    function searchTodos() {
+        const searchText = searchInput.value.toLowerCase();
+        const filteredTodos = todos.filter(todo => 
+            todo.toLowerCase().includes(searchText)
+        );
+        renderTodos(filteredTodos);
+    }
+
+    form.addEventListener('submit', addTodo);
+
+    todoList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const index = e.target.getAttribute('data-index');
+            deleteTodo(index);
+        }
+    });
+
+    searchInput.addEventListener('input', searchTodos);
+
+    renderTodos(todos);
 });
